@@ -20,9 +20,10 @@
 - [3. Comentários sobre o Código](#comentários-sobre-o-código)
 - [4. Plano de Testes](#plano-de-testes)
 - [5. Resultados dos Testes](#resultados-dos-testes)
-- [6. Procedimentos de Build](#procedimentos-de-construção)
-- [7. Problemas Encontrados](#problemas-encontrados)
-- [8. Comentários Adicionais](#comentários-adicionais)
+- [6. Integração com Beeceptor](#integração-com-beeceptor)
+- [7. Procedimentos de Build](#procedimentos-de-build)
+- [8. Problemas Encontrados](#problemas-encontrados)
+- [9. Comentários Adicionais](#comentários-adicionais)
 
 ---
 
@@ -84,7 +85,7 @@ Este projeto consiste em uma **corretora virtual de ações e criptomoedas**, de
   - Dados da API atualizados a cada 30 segundos (simular tempo real).  
 - **Usabilidade:**  
   - Design responsivo (mobile/desktop).  
-  - Navegação intuitiva em SPA (sem recarregar a página).  
+  - Navegação intuitiva.  
 - **Acessibilidade:**  
   - Contraste adequado e labels para leitores de tela.  
 - **Segurança:**  
@@ -93,7 +94,7 @@ Este projeto consiste em uma **corretora virtual de ações e criptomoedas**, de
 #### 1.3 Adaptações 
 - **Funcionalidade Extra:**  
   - Simulador de estratégias com dados históricos (diferencial).  
-  - Display de notícias relevantes para Trading
+  - Display de notícias relevantes para Trading (diferencial).
 
 ---
 
@@ -104,29 +105,31 @@ Este projeto consiste em uma **corretora virtual de ações e criptomoedas**, de
 
 ---
 
-### Funcionalidades
+# Estrutura de Páginas (.tsx)
+
+A seguir estão as páginas do projeto organizadas por áreas, com todos os arquivos convertidos para `.tsx` e nomeados com letras maiúsculas no estilo PascalCase.
 
 ### Área do Cliente 
-- **Index** (`index.html`): Página inicial
-- **Mercado** (`market.html`): Visualização de ações e criptomoedas com filtros.  
-- **Detalhes do Ativo** (`stock-detail.html`): Gráficos de preço, histórico e opção de compra/venda.  
-- **Carteira** (`wallet.html`): Saldo virtual e portfólio de investimentos.  
-- **Carrinho** (`cart.html`): Confirmação de ordens com cartão fictício.  
-- **Notícias** (`news.html`): Feed de notícias financeiras (integrado à API).  
-- **Histórico** (`orders.html`): Registro de transações simuladas.  
-- **Simulador de Estratégias** (`simulation.html`): Teste de estratégias com dados históricos.  
+- **Index** (`Index.tsx`): Página inicial  
+- **Mercado** (`Market.tsx`): Visualização de ações e criptomoedas com filtros.  
+- **Detalhes do Ativo** (`StockDetail.tsx`): Gráficos de preço, histórico e opção de compra/venda.  
+- **Carteira** (`Wallet.tsx`): Saldo virtual e portfólio de investimentos.  
+- **Carrinho** (`Cart.tsx`): Confirmação de ordens com cartão fictício.  
+- **Notícias** (`News.tsx`): Feed de notícias financeiras (integrado à API).  
+- **Histórico** (`Orders.tsx`): Registro de transações simuladas.  
+- **Simulador de Estratégias** (`Simulation.tsx`): Teste de estratégias com dados históricos.  
 
 ### Área do Administrador 
-- **Dashboard** (`admin-dashboard.html`): Visão geral de usuários e movimentações.  
-- **Cadastro de Ativos** (`admin-edit-product.html`): CRUD de ações/criptomoedas.  
-- **Cadastro de Novos Admins** (`admin-register.html`): Criação de novos administradores.  
-- **Ver Histórico de Compras** (`admin-purchases.html`): Visualizar compras de ações/criptomoedas dos usuários.  
-- **Gerenciamento de Admins** (`admin-admins.html`): Lista e gerenciamento de administradores.  
-- **Gerenciamento de Usuários** (`admin-users.html`): Visualização e controle de usuários registrados.  
+- **Dashboard** (`Dashboard.tsx`): Visão geral de usuários e movimentações.  
+- **Cadastro de Ativos** (`Carts.tsx`): Visualização de carrinhos abertos
+- **Cadastro de Novos Admins** (`Stocks.tsx`): CRUD de ações/criptomoedas  
+- **Gerenciamento de Admins** (`Transactions.tsx`):  Visualizar compras de ações/criptomoedas dos usuários.   
+- **Gerenciamento de Usuários** (`Users.tsx`): Visualização e controle de usuários e administradores registrados.  
 
 ### Funcionalidades Compartilhadas 
-- **Homepage** (`home.html`): Homepage da aplicação
-- **Autenticação** (`login.html`, `register.html`, `password-recovery.html`): Fluxo completo de login e cadastro.
+- **Homepage** (`Home.tsx`): Homepage da aplicação  
+- **Autenticação** (`Login.tsx`, `Register.tsx`, `PasswordRecovery.tsx`): Fluxo completo de login e cadastro.  
+
 
 ---
 
@@ -294,50 +297,128 @@ erDiagram
 ```
 
 ## Comentários sobre o Código
-- TBD
+
+A aplicação foi construída com foco na modularização e reutilização de componentes em React, utilizando Context API para gerenciamento de estados globais, como autenticação, saldo da carteira e itens no carrinho.
+
+- Componentes funcionais com React + TypeScript.
+- Serviços organizados por responsabilidades.
+- Requisições `fetch` estruturadas.
+- Navegação protegida com persistência de sessão, com dados salvos em LocalStorage.
+
+---
 
 ## Plano de Testes
-- TBD
+
+### Funcionalidades a serem testadas:
+- **Adição de ativos ao carrinho com limite de estoque**  
+  - Esperado: impedimento de adicionar quantidade maior que o disponível.
+- **Aumento, diminuição e exclusão de ativos no carrinho**  
+  - Esperado: atualização do preço total e da quantidade de ativos a ser comprado.
+- **Compra com saldo da carteira (com limite)**  
+  - Esperado: falha caso valor total > saldo ou número de ativos maior que o estoque, adição da compra no histórico em "Ordens" e dominuição do estoque do ativo comprado.
+- **Compra com cartão de crédito (sem limite)**  
+  - Esperado: compra válida desde que estoque seja suficiente, adição da compra no histórico em "Ordens" e dominuição do estoque do ativo comprado.
+- **Venda de ativos adquiridos previamente**
+  - Esperado: aumento no saldo da carteira, remoção do ativo proporcional no portfólio, adição da venda no histórico em "Ordens" e aumento do estoque do ativo vendido.
+- **Inserção e remoção de valores da carteira**  
+  - Esperado: atualização do saldo da carteira em tempo real ao realizar depósitos e saques na aba "Carteira".
+
+
+---
 
 ## Resultados dos Testes
-- TBD
 
-## Procedimentos de Build
-- TBD
+| Cenário de Teste | Resultado Esperado | Exemplo |
+|------------------|--------------------|---------|
+| Adição acima do estoque | Bloquear adição | Estoque: 200, tentativa: 250 → ⚠️ erro |
+| Diminuição de quantidade | Atualizar subtotal e estoque virtual | Quantidade de 160 para 40, estoque 200 → novo estoque: 160 |
+| Compra com saldo suficiente | Sucesso, debita valor da carteira | Saldo: R$1000, compra: R$414 → saldo final: R$586 |
+| Compra com saldo insuficiente | Erro e bloqueio | Saldo: R$200, compra: R$414 → ⚠️ erro |
+| Compra com cartão de crédito | Sempre válida (respeitando estoque) | Cartão → compra de 3 ativos, estoque 5 → OK |
+| Venda de ativos | Incrementa carteira e remove do portfólio | Venda de 2 ações → +R$828, -2 ativos |
+| Inserção de saldo | Adiciona valor à carteira | +R$500 → saldo atualizado |
+| Remoção de saldo | Subtrai valor até limite zero | -R$200 → saldo reduzido |
 
-## Problemas Encontrados
-- TBD
+---
 
-## Comentários Adicionais
-- TBD
+## Integração com Beeceptor
 
+Para simular requisições reais sem backend, foi utilizada a ferramenta Beeceptor com dois endpoints principais:
 
+### GET `/produto/123`
 
+- Usado em `AssetDetail.tsx` para obter dados estáticos do ativo.
+- Configuração:
+  - Método: **GET**
+  - Path: **/produto/123**
+  - Corpo de resposta:
+```json
+{
+  "id": "123",
+  "name": "Microsoft",
+  "price": 414.28,
+  "stock": 190
+}
+```
 
+#### Resultado esperado (exemplo):
 
-## How can I edit this code?
+![POST Response](./mnt/data/response_post.png)
 
-There are several ways of editing your application.
+### POST `/product/:id`
 
-**Use your preferred IDE**
+- Usado em `Cart.tsx` ao confirmar compra.
+- Resposta dinâmica com cálculo automático da nova quantidade.
+- Configuração no Beeceptor:
+  - **Método:** `POST`
+  - **Path:** `/product/:id`
+  - **Response headers:**
+    ```json
+    {
+      "Content-Type": "application/json"
+    }
+    ```
+  - **Response body:**
+    ```json
+    {
+      "id": "{{body 'productId'}}",
+      "name": "{{body 'nameProduct'}}",
+      "price": "{{body 'price'}}",
+      "stock": "{{body 'stock'}}",
+      "quantity": "{{body 'quantity'}}",
+      "new_quantity": "{{subtract (body 'stock') (body 'quantity')}}"
+    }
+    ```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes.
+#### Resultado esperado (exemplo):
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+![POST Response](./mnt/data/response_post.png)
 
-Follow these steps:
+---
+
+## Procedimentos de Build:
+
+O único requisito é ter o Node.js e o npm instalados - [instalar com nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+
+Siga os seguintes passos:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Etapa 1: Clone o repositório usando a URL do Git do projeto.
+git clone [<SUA_URL_GIT>](https://github.com/Vinicius-GN/Orange_Wave-Platform)
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Etapa 2: Navegue até o diretório do projeto.
+cd Orange_Wave-Platform
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Etapa 3: Instale as dependências necessárias.
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Etapa 4: Inicie o servidor de desenvolvimento com recarregamento automático e visualização instantânea.
 npm run dev
 ```
+- Faça login na plataforma com o usuário "grupo@gmail.com" e "senha123"
+
+
+
+
+
 
