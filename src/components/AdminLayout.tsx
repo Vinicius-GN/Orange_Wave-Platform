@@ -89,6 +89,16 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, description 
                     <ReceiptText className="h-4 w-4 mr-2" />
                     Transactions
                   </Button>
+
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start" 
+                    onClick={() => navigate('/')}
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Logout
+                  </Button>
+
                 </div>
               </ScrollArea>
             </CardContent>
