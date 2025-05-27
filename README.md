@@ -363,7 +363,7 @@ Para simular requisições reais sem backend, foi utilizada a ferramenta Beecept
 
 #### Resultado esperado (exemplo):
 
-![POST Response](./mnt/data/response_post.png)
+![Get Response](/Images/get_response.png)
 
 ### POST `/product/:id`
 
@@ -392,7 +392,7 @@ Para simular requisições reais sem backend, foi utilizada a ferramenta Beecept
 
 #### Resultado esperado (exemplo):
 
-![POST Response](./mnt/data/response_post.png)
+![POST Response](/Images/response_post.png)
 
 ---
 
