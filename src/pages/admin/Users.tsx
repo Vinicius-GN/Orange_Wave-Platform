@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/components/AdminLayout';
 import { Button } from '@/components/ui/button';
@@ -24,118 +25,53 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Search, FileText, User as UserIcon, Mail, Calendar, Wallet as WalletIcon, TrendingUp, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { Search, UserPlus, Trash2, User as UserIcon } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
+import { getAdminUsers, addAdminUser, deleteAdminUser, initializeAdminUsers } from '@/services/adminUserService';
 
 // Define User interface
 interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'customer'; // Fixed to only 'admin' | 'customer'
-  status: 'active' | 'suspended' | 'pending';
-  joinDate: string;
-  lastActive: string;
+  role: 'admin' | 'client';
+  phone?: string;
   balance: {
     wallet: number;
-    invested: number;
+    investment: number;
   };
-  avatarUrl?: string;
 }
 
-// Mock user data
-const mockUsers: User[] = [
-  {
-    id: 'user-1',
-    email: 'john.doe@example.com',
-    name: 'John Doe',
-    role: 'customer',
-    status: 'active',
-    joinDate: '2024-01-15',
-    lastActive: '2024-07-15',
-    balance: {
-      wallet: 1500,
-      invested: 5000,
-    },
-    avatarUrl: 'https://i.pravatar.cc/150?img=1',
-  },
-  {
-    id: 'user-2',
-    email: 'jane.smith@example.com',
-    name: 'Jane Smith',
-    role: 'customer',
-    status: 'suspended',
-    joinDate: '2023-11-20',
-    lastActive: '2024-07-10',
-    balance: {
-      wallet: 500,
-      invested: 2500,
-    },
-    avatarUrl: 'https://i.pravatar.cc/150?img=2',
-  },
-  {
-    id: 'user-3',
-    email: 'robert.jones@example.com',
-    name: 'Robert Jones',
-    role: 'admin',
-    status: 'active',
-    joinDate: '2024-05-01',
-    lastActive: '2024-07-14',
-    balance: {
-      wallet: 2500,
-      invested: 10000,
-    },
-    avatarUrl: 'https://i.pravatar.cc/150?img=3',
-  },
-  {
-    id: 'user-4',
-    email: 'emily.brown@example.com',
-    name: 'Emily Brown',
-    role: 'customer',
-    status: 'pending',
-    joinDate: '2024-06-10',
-    lastActive: 'Never',
-    balance: {
-      wallet: 100,
-      invested: 1000,
-    },
-    avatarUrl: 'https://i.pravatar.cc/150?img=4',
-  },
-  {
-    id: 'user-5',
-    email: 'michael.davis@example.com',
-    name: 'Michael Davis',
-    role: 'customer',
-    status: 'active',
-    joinDate: '2024-02-28',
-    lastActive: '2024-07-12',
-    balance: {
-      wallet: 800,
-      invested: 3000,
-    },
-    avatarUrl: 'https://i.pravatar.cc/150?img=5',
-  },
-];
-
 const UsersManagement = () => {
-  const [users, setUsers] = useState<User[]>(mockUsers);
-  const [filteredUsers, setFilteredUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const [isViewUserDialogOpen, setIsViewUserDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    role: 'client' as 'admin' | 'client',
+    phone: '',
+    walletBalance: 1000
+  });
   const { toast } = useToast();
 
   useEffect(() => {
-    // Simulate loading data
+    // Initialize and load users
+    const loadedUsers = initializeAdminUsers();
+    setUsers(loadedUsers);
+  }, []);
+
+  useEffect(() => {
+    // Apply filters
     setIsLoading(true);
     setTimeout(() => {
       let filtered = [...users];
@@ -153,15 +89,10 @@ const UsersManagement = () => {
         filtered = filtered.filter(user => user.role === roleFilter);
       }
 
-      // Apply status filter
-      if (statusFilter !== 'all') {
-        filtered = filtered.filter(user => user.status === statusFilter);
-      }
-
       setFilteredUsers(filtered);
       setIsLoading(false);
     }, 300);
-  }, [searchQuery, roleFilter, statusFilter, users]);
+  }, [searchQuery, roleFilter, users]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -171,47 +102,70 @@ const UsersManagement = () => {
     setRoleFilter(value);
   };
 
-  const handleStatusFilterChange = (value: string) => {
-    setStatusFilter(value);
-  };
-
-  const handleRoleChange = (userId: string, newRole: 'admin' | 'customer') => {
-    setUsers(currentUsers => {
-      return currentUsers.map(user => {
-        if (user.id === userId) {
-          return { ...user, role: newRole };
-        }
-        return user;
+  const handleAddUser = () => {
+    if (!newUser.name || !newUser.email) {
+      toast({
+        title: "Validation Error",
+        description: "Name and email are required.",
+        variant: "destructive",
       });
+      return;
+    }
+
+    const createdUser = addAdminUser({
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      phone: newUser.phone,
+      balance: {
+        wallet: newUser.walletBalance,
+        investment: 0
+      }
     });
 
-    setFilteredUsers(currentUsers => {
-      return currentUsers.map(user => {
-        if (user.id === userId) {
-          return { ...user, role: newRole };
-        }
-        return user;
-      });
+    setUsers(getAdminUsers());
+    setIsAddUserDialogOpen(false);
+    setNewUser({
+      name: '',
+      email: '',
+      role: 'client',
+      phone: '',
+      walletBalance: 1000
     });
 
     toast({
-      title: "Role Updated",
-      description: `User ${userId} role changed to ${newRole}.`,
+      title: "User Created",
+      description: `User ${createdUser.name} has been created successfully.`,
     });
+  };
+
+  const handleDeleteUser = (userId: string, userName: string) => {
+    if (window.confirm(`Are you sure you want to delete user "${userName}"?`)) {
+      const success = deleteAdminUser(userId);
+      
+      if (success) {
+        setUsers(getAdminUsers());
+        toast({
+          title: "User Deleted",
+          description: `User ${userName} has been deleted successfully.`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete user.",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   const openUserDialog = (user: User) => {
     setSelectedUser(user);
-    setIsDialogOpen(true);
-  };
-
-  const closeUserDialog = () => {
-    setSelectedUser(null);
-    setIsDialogOpen(false);
+    setIsViewUserDialogOpen(true);
   };
 
   return (
-    <AdminLayout title="Users" description="Manage and view all users">
+    <AdminLayout title="Manage Users" description="View and manage all platform users">
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
         <div className="flex flex-1 items-center gap-2">
@@ -233,23 +187,16 @@ const UsersManagement = () => {
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="customer">Customer</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
-              <SelectTrigger className="min-w-[120px]">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="client">Client</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
+
+        <Button onClick={() => setIsAddUserDialogOpen(true)}>
+          <UserPlus className="h-4 w-4 mr-2" />
+          Add User
+        </Button>
       </div>
 
       {/* Users table */}
@@ -260,12 +207,10 @@ const UsersManagement = () => {
               <TableHead className="w-[50px]">
                 <UserIcon className="h-4 w-4" />
               </TableHead>
+              <TableHead>User ID</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Join Date</TableHead>
-              <TableHead>Last Active</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -274,7 +219,7 @@ const UsersManagement = () => {
               // Loading state
               Array.from({ length: 5 }).map((_, index) => (
                 <TableRow key={`loading-${index}`}>
-                  <TableCell colSpan={8} className="h-14">
+                  <TableCell colSpan={6} className="h-14">
                     <div className="w-full h-4 bg-secondary/50 rounded animate-pulse"></div>
                   </TableCell>
                 </TableRow>
@@ -282,7 +227,7 @@ const UsersManagement = () => {
             ) : filteredUsers.length === 0 ? (
               // No data state
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
+                <TableCell colSpan={6} className="h-24 text-center">
                   No users found.
                 </TableCell>
               </TableRow>
@@ -291,38 +236,34 @@ const UsersManagement = () => {
               filteredUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
-                    <img
-                      src={user.avatarUrl}
-                      alt={user.name}
-                      className="h-8 w-8 rounded-full"
-                    />
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <UserIcon className="h-4 w-4" />
+                    </div>
                   </TableCell>
+                  <TableCell className="font-mono text-sm">{user.id}</TableCell>
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{user.role}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        user.status === 'active'
-                          ? 'bg-green-500/10 text-green-500 border-green-500/20'
-                          : user.status === 'suspended'
-                            ? 'bg-red-500/10 text-red-500 border-red-500/20'
-                            : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
-                      )}
+                    <Badge 
+                      variant={user.role === 'admin' ? 'default' : 'secondary'}
                     >
-                      {user.status}
+                      {user.role}
                     </Badge>
                   </TableCell>
-                  <TableCell>{format(new Date(user.joinDate), 'MMM dd, yyyy')}</TableCell>
-                  <TableCell>{user.lastActive}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => openUserDialog(user)}>
-                      <FileText className="h-4 w-4 mr-2" />
-                      View
-                    </Button>
+                    <div className="flex gap-2 justify-end">
+                      <Button variant="ghost" size="sm" onClick={() => openUserDialog(user)}>
+                        View
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleDeleteUser(user.id, user.name)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -331,102 +272,134 @@ const UsersManagement = () => {
         </Table>
       </div>
 
-      {/* User details dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[625px]">
+      {/* Add User Dialog */}
+      <Dialog open={isAddUserDialogOpen} onOpenChange={setIsAddUserDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+            <DialogDescription>
+              Create a new user account for the platform.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                value={newUser.name}
+                onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={newUser.email}
+                onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="role" className="text-right">
+                Role
+              </Label>
+              <Select
+                value={newUser.role}
+                onValueChange={(value: 'admin' | 'client') => setNewUser({ ...newUser, role: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="client">Client</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="phone" className="text-right">
+                Phone
+              </Label>
+              <Input
+                id="phone"
+                value={newUser.phone}
+                onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="balance" className="text-right">
+                Initial Balance
+              </Label>
+              <Input
+                id="balance"
+                type="number"
+                value={newUser.walletBalance}
+                onChange={(e) => setNewUser({ ...newUser, walletBalance: Number(e.target.value) })}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddUserDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddUser}>Create User</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View User Dialog */}
+      <Dialog open={isViewUserDialogOpen} onOpenChange={setIsViewUserDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>User Details</DialogTitle>
             <DialogDescription>
               View detailed information about the selected user.
             </DialogDescription>
           </DialogHeader>
-          {selectedUser ? (
+          {selectedUser && (
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="text-center">
-                  <img
-                    src={selectedUser.avatarUrl}
-                    alt={selectedUser.name}
-                    className="h-24 w-24 rounded-full mx-auto mb-2"
-                  />
-                  <div className="text-lg font-medium">{selectedUser.name}</div>
-                  <div className="text-muted-foreground">{selectedUser.email}</div>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      selectedUser.status === 'active'
-                        ? 'bg-green-500/10 text-green-500 border-green-500/20'
-                        : selectedUser.status === 'suspended'
-                          ? 'bg-red-500/10 text-red-500 border-red-500/20'
-                          : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
-                    )}
-                  >
-                    {selectedUser.status}
-                  </Badge>
-                </div>
-                <div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="id" className="text-right">
-                      User ID
-                    </Label>
-                    <Input id="id" value={selectedUser.id} className="col-span-3" readOnly />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="role" className="text-right">
-                      Role
-                    </Label>
-                    <Select
-                      value={selectedUser.role}
-                      onValueChange={(value) => handleRoleChange(selectedUser.id, value as 'admin' | 'customer')}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="customer">Customer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="joinDate" className="text-right">
-                      Join Date
-                    </Label>
-                    <Input id="joinDate" value={format(new Date(selectedUser.joinDate), 'MMM dd, yyyy')} className="col-span-3" readOnly />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="lastActive" className="text-right">
-                      Last Active
-                    </Label>
-                    <Input id="lastActive" value={selectedUser.lastActive} className="col-span-3" readOnly />
-                  </div>
-                </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">User ID</Label>
+                <Input value={selectedUser.id} className="col-span-3" readOnly />
               </div>
-              <div className="border-t pt-4">
-                <div className="text-lg font-medium mb-2">Balance</div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2">
-                    <WalletIcon className="h-4 w-4 text-muted-foreground" />
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium">Wallet</div>
-                      <div className="text-lg font-bold">${selectedUser.balance.wallet.toFixed(2)}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    <div className="space-y-1">
-                      <div className="text-sm font-medium">Invested</div>
-                      <div className="text-lg font-bold">${selectedUser.balance.invested.toFixed(2)}</div>
-                    </div>
-                  </div>
-                </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Name</Label>
+                <Input value={selectedUser.name} className="col-span-3" readOnly />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Email</Label>
+                <Input value={selectedUser.email} className="col-span-3" readOnly />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Role</Label>
+                <Badge variant={selectedUser.role === 'admin' ? 'default' : 'secondary'}>
+                  {selectedUser.role}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Phone</Label>
+                <Input value={selectedUser.phone || 'N/A'} className="col-span-3" readOnly />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Wallet Balance</Label>
+                <Input value={`$${selectedUser.balance.wallet.toFixed(2)}`} className="col-span-3" readOnly />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Investment Balance</Label>
+                <Input value={`$${selectedUser.balance.investment.toFixed(2)}`} className="col-span-3" readOnly />
               </div>
             </div>
-          ) : (
-            <div className="text-center py-4">Loading...</div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={closeUserDialog}>
+            <Button variant="outline" onClick={() => setIsViewUserDialogOpen(false)}>
               Close
             </Button>
           </DialogFooter>

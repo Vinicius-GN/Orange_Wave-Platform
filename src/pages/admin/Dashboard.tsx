@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { BarChart3, Users, ShoppingCart, TrendingUp, Package, AlertTriangle } from 'lucide-react';
+import { BarChart3, Users, ShoppingCart, TrendingUp, Package } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,6 @@ const AdminDashboard = () => {
   const [usersCount, setUsersCount] = useState(0);
   const [cartsCount, setCartsCount] = useState(0);
   const [transactionsCount, setTransactionsCount] = useState(0);
-  const [frozenAssets, setFrozenAssets] = useState<string[]>([]);
   const navigate = useNavigate();
   const { user } = useAuth();
   
@@ -57,7 +56,6 @@ const AdminDashboard = () => {
     setUsersCount(158);
     setCartsCount(12);
     setTransactionsCount(243);
-    setFrozenAssets(['TSLA']);
   }, []);
   
   return (
@@ -66,7 +64,7 @@ const AdminDashboard = () => {
       description="Overview of platform statistics and management tools"
     >
       {/* Stats cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
         <Card>
           <CardContent className="flex pt-6">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
@@ -108,25 +106,6 @@ const AdminDashboard = () => {
         <Card>
           <CardContent className="flex pt-6">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
-              <ShoppingCart className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Active Carts</p>
-              <h3 className="text-2xl font-bold">{cartsCount}</h3>
-              <Button 
-                variant="link" 
-                className="p-0 h-auto text-xs" 
-                onClick={() => navigate('/admin/carts')}
-              >
-                View Carts
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="flex pt-6">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
               <TrendingUp className="h-6 w-6 text-primary" />
             </div>
             <div>
@@ -143,33 +122,6 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
-      
-      {/* Alerts section */}
-      {frozenAssets.length > 0 && (
-        <Card className="mb-6 border-destructive/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center text-lg">
-              <AlertTriangle className="h-5 w-5 mr-2 text-destructive" />
-              Frozen Assets
-            </CardTitle>
-            <CardDescription>
-              The following assets are currently frozen and unavailable for trading
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {frozenAssets.map(asset => (
-                <div 
-                  key={asset} 
-                  className="px-3 py-1 bg-destructive/10 text-destructive rounded-full text-sm font-medium"
-                >
-                  {asset}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
       
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -236,39 +188,6 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
-      
-      {/* Quick actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common management tasks</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          <Button 
-            className="h-auto py-4 flex flex-col items-center justify-center"
-            onClick={() => navigate('/admin/stocks/new')}
-          >
-            <Package className="h-8 w-8 mb-2" />
-            <span>Add New Stock</span>
-          </Button>
-          
-          <Button 
-            className="h-auto py-4 flex flex-col items-center justify-center"
-            onClick={() => navigate('/admin/users/new')}
-          >
-            <Users className="h-8 w-8 mb-2" />
-            <span>Register Admin</span>
-          </Button>
-          
-          <Button 
-            className="h-auto py-4 flex flex-col items-center justify-center"
-            onClick={() => navigate('/admin/transactions')}
-          >
-            <BarChart3 className="h-8 w-8 mb-2" />
-            <span>Export Reports</span>
-          </Button>
-        </CardContent>
-      </Card>
     </AdminLayout>
   );
 };

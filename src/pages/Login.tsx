@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,16 +28,22 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const Login = () => {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
-  // If already authenticated, redirect to dashboard
-  if (isAuthenticated) {
-    navigate('/dashboard');
-  }
+  // Handle role-based redirection when user state changes
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -52,7 +59,7 @@ const Login = () => {
     try {
       await login(data.email, data.password);
       
-      // Redirect to dashboard is now handled by the auth state change in AuthContext
+      // Redirection is now handled by the useEffect hook above
     } catch (error) {
       // Error handling is done in the AuthContext login function
       setIsLoading(false);

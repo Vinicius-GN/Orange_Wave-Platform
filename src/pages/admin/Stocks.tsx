@@ -28,160 +28,24 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from '@/lib/utils';
-
-// Update StockData interface for consistency
-interface StockData {
-  id: string;
-  symbol: string;
-  name: string;
-  type: 'stock' | 'crypto'; // Removed 'etf' and 'other'
-  price: number;
-  change: number;
-  changePercent: number;
-  marketCap: number;
-  volume: number;
-  logoUrl?: string;
-  description?: string;
-  sector?: string;
-  industry?: string;
-  isFrozen?: boolean; 
-  isPending?: boolean;
-}
+import { AssetData } from '@/services/marketService';
+import { 
+  initializeAdminAssets, 
+  getAdminAssets, 
+  addAdminAsset, 
+  updateAdminAsset, 
+  deleteAdminAsset 
+} from '@/services/adminAssetService';
 
 interface StockFormValues {
   symbol: string;
   name: string;
   type: 'stock' | 'crypto';
-  price: number;
-  change: number;
-  changePercent: number;
-  marketCap: number;
-  volume: number;
   logoUrl?: string;
-  description?: string;
-  sector?: string;
-  industry?: string;
+  logo?: string;
+  availableStock?: number;
   isFrozen?: boolean;
 }
-
-// Mock stock data
-const mockStocks: StockData[] = [
-  {
-    id: 'stock-1',
-    symbol: 'AAPL',
-    name: 'Apple Inc.',
-    type: 'stock',
-    price: 175.00,
-    change: 1.50,
-    changePercent: 0.86,
-    marketCap: 2800000000000,
-    volume: 45000000,
-    logoUrl: 'https://example.com/aapl.png',
-    description: 'Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide.',
-    sector: 'Technology',
-    industry: 'Consumer Electronics',
-    isFrozen: false,
-    isPending: false,
-  },
-  {
-    id: 'stock-2',
-    symbol: 'MSFT',
-    name: 'Microsoft Corp.',
-    type: 'stock',
-    price: 285.50,
-    change: -0.75,
-    changePercent: -0.26,
-    marketCap: 2100000000000,
-    volume: 30000000,
-    logoUrl: 'https://example.com/msft.png',
-    description: 'Microsoft Corporation develops, licenses, and supports software, services, devices, and solutions worldwide.',
-    sector: 'Technology',
-    industry: 'Software',
-    isFrozen: false,
-    isPending: false,
-  },
-  {
-    id: 'stock-3',
-    symbol: 'GOOGL',
-    name: 'Alphabet Inc.',
-    type: 'stock',
-    price: 2500.00,
-    change: 25.00,
-    changePercent: 1.01,
-    marketCap: 1700000000000,
-    volume: 20000000,
-    logoUrl: 'https://example.com/googl.png',
-    description: 'Alphabet Inc. provides various products and platforms worldwide.',
-    sector: 'Technology',
-    industry: 'Internet',
-    isFrozen: false,
-    isPending: false,
-  },
-  {
-    id: 'stock-4',
-    symbol: 'AMZN',
-    name: 'Amazon.com Inc.',
-    type: 'stock',
-    price: 3200.00,
-    change: 10.00,
-    changePercent: 0.31,
-    marketCap: 1600000000000,
-    volume: 25000000,
-    logoUrl: 'https://example.com/amzn.png',
-    description: 'Amazon.com, Inc. engages in the retail sale of consumer products and subscriptions in North America and internationally.',
-    sector: 'Consumer Discretionary',
-    industry: 'E-Commerce',
-    isFrozen: false,
-    isPending: false,
-  },
-  {
-    id: 'stock-5',
-    symbol: 'TSLA',
-    name: 'Tesla Inc.',
-    type: 'stock',
-    price: 750.00,
-    change: -15.00,
-    changePercent: -1.96,
-    marketCap: 700000000000,
-    volume: 35000000,
-    logoUrl: 'https://example.com/tsla.png',
-    description: 'Tesla, Inc. designs, develops, manufactures, leases, and sells electric vehicles, and energy generation and storage systems in the United States, China, and internationally.',
-    sector: 'Consumer Discretionary',
-    industry: 'Auto Manufacturers',
-    isFrozen: false,
-    isPending: false,
-  },
-  {
-    id: 'crypto-1',
-    symbol: 'BTC',
-    name: 'Bitcoin',
-    type: 'crypto',
-    price: 50000.00,
-    change: 500.00,
-    changePercent: 1.01,
-    marketCap: 900000000000,
-    volume: 30000000000,
-    logoUrl: 'https://example.com/btc.png',
-    description: 'Bitcoin is a decentralized digital currency, without a central bank or single administrator, that can be sent from user to user on the peer-to-peer bitcoin network without the need for intermediaries.',
-    isFrozen: false,
-    isPending: false,
-  },
-  {
-    id: 'crypto-2',
-    symbol: 'ETH',
-    name: 'Ethereum',
-    type: 'crypto',
-    price: 3500.00,
-    change: -50.00,
-    changePercent: -1.41,
-    marketCap: 400000000000,
-    volume: 15000000000,
-    logoUrl: 'https://example.com/eth.png',
-    description: 'Ethereum is a decentralized, open-source blockchain with smart contract functionality. Ether is the native cryptocurrency of the platform.',
-    isFrozen: false,
-    isPending: false,
-  },
-];
 
 // Function to format currency
 const formatCurrency = (amount: number): string => {
@@ -194,88 +58,93 @@ const formatCurrency = (amount: number): string => {
 };
 
 const StocksManagement = () => {
-  const [stocks, setStocks] = useState<StockData[]>(mockStocks);
-  const [filteredStocks, setFilteredStocks] = useState<StockData[]>(mockStocks);
-  const [isLoading, setIsLoading] = useState(false);
+  const [assets, setAssets] = useState<AssetData[]>([]);
+  const [filteredAssets, setFilteredAssets] = useState<AssetData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [selectedStock, setSelectedStock] = useState<StockData | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<AssetData | null>(null);
   const [formValues, setFormValues] = useState<StockFormValues>({
     symbol: '',
     name: '',
     type: 'stock',
-    price: 0,
-    change: 0,
-    changePercent: 0,
-    marketCap: 0,
-    volume: 0,
+    availableStock: 100,
   });
   const { toast } = useToast();
 
+  // Load assets from localStorage/marketService on component mount
+  useEffect(() => {
+    const loadAssets = async () => {
+      setIsLoading(true);
+      try {
+        const adminAssets = await initializeAdminAssets();
+        setAssets(adminAssets);
+        setFilteredAssets(adminAssets);
+      } catch (error) {
+        console.error('Error loading assets:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load assets.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAssets();
+  }, [toast]);
+
   useEffect(() => {
     applyFilters(searchQuery);
-  }, [stocks, searchQuery]);
+  }, [assets, searchQuery]);
 
   const applyFilters = (search: string) => {
-    setIsLoading(true);
-    setTimeout(() => {
-      let filtered = [...stocks];
+    let filtered = [...assets];
 
-      if (search) {
-        filtered = filtered.filter(stock =>
-          stock.symbol.toLowerCase().includes(search.toLowerCase()) ||
-          stock.name.toLowerCase().includes(search.toLowerCase())
-        );
-      }
+    if (search) {
+      filtered = filtered.filter(asset =>
+        asset.symbol.toLowerCase().includes(search.toLowerCase()) ||
+        asset.name.toLowerCase().includes(search.toLowerCase())
+      );
+    }
 
-      setFilteredStocks(filtered);
-      setIsLoading(false);
-    }, 300);
+    setFilteredAssets(filtered);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
-  const openNewStockDialog = () => {
+  const openNewAssetDialog = () => {
     setIsEditMode(false);
-    setSelectedStock(null);
+    setSelectedAsset(null);
     setFormValues({
       symbol: '',
       name: '',
       type: 'stock',
-      price: 0,
-      change: 0,
-      changePercent: 0,
-      marketCap: 0,
-      volume: 0,
+      availableStock: 100,
     });
     setIsDialogOpen(true);
   };
 
-  const openEditStockDialog = (stock: StockData) => {
+  const openEditAssetDialog = (asset: AssetData) => {
     setIsEditMode(true);
-    setSelectedStock(stock);
+    setSelectedAsset(asset);
     setFormValues({
-      symbol: stock.symbol,
-      name: stock.name,
-      type: stock.type,
-      price: stock.price,
-      change: stock.change,
-      changePercent: stock.changePercent,
-      marketCap: stock.marketCap,
-      volume: stock.volume,
-      logoUrl: stock.logoUrl,
-      description: stock.description,
-      sector: stock.sector,
-      industry: stock.industry,
-      isFrozen: stock.isFrozen,
+      symbol: asset.symbol,
+      name: asset.name,
+      type: asset.type,
+      logoUrl: asset.logoUrl,
+      logo: asset.logo,
+      availableStock: asset.availableStock,
+      isFrozen: asset.isFrozen,
     });
     setIsDialogOpen(true);
   };
 
-  const closeStockDialog = () => {
+  const closeAssetDialog = () => {
     setIsDialogOpen(false);
   };
 
@@ -283,7 +152,8 @@ const StocksManagement = () => {
     const { name, value } = e.target;
     setFormValues(prevValues => ({
       ...prevValues,
-      [name]: value,
+      [name]: name === 'availableStock' 
+              ? parseFloat(value) || 0 : value,
     }));
   };
 
@@ -294,57 +164,24 @@ const StocksManagement = () => {
     }));
   };
 
-  const handleToggleFreeze = (stockId: string) => {
-    setStocks(prevStocks =>
-      prevStocks.map(stock =>
-        stock.id === stockId ? { ...stock, isFrozen: !stock.isFrozen } : stock
-      )
-    );
-  };
-
-  const handleTogglePending = (stockId: string) => {
-    setStocks(prevStocks =>
-      prevStocks.map(stock =>
-        stock.id === stockId ? { ...stock, isPending: !stock.isPending } : stock
-      )
-    );
-  };
-
-  const handleSaveStock = (editedStock: StockData) => {
-    // Ensure type is valid (stock or crypto only)
-    const validType: 'stock' | 'crypto' = editedStock.type === 'crypto' ? 'crypto' : 'stock';
-    
-    const updatedStock = {
-      ...editedStock,
-      type: validType
-    };
-    
-    if (isEditMode && selectedStock) {
-      // Update existing stock
-      setStocks(prevStocks =>
-        prevStocks.map(stock =>
-          stock.id === selectedStock.id ? updatedStock : stock
-        )
-      );
-      toast({
-        title: 'Stock Updated',
-        description: `${updatedStock.name} has been updated successfully.`,
-      });
-    } else {
-      // Add new stock
-      const newStock = { ...updatedStock, id: `stock-${Date.now()}` };
-      setStocks(prevStocks => [...prevStocks, newStock]);
-      toast({
-        title: 'Stock Created',
-        description: `${newStock.name} has been created successfully.`,
-      });
+  const handleToggleFreeze = (assetId: string) => {
+    const asset = assets.find(a => a.id === assetId);
+    if (asset) {
+      const updated = updateAdminAsset(assetId, { isFrozen: !asset.isFrozen });
+      if (updated) {
+        setAssets(getAdminAssets());
+        toast({
+          title: asset.isFrozen ? 'Asset Unfrozen' : 'Asset Frozen',
+          description: `${asset.name} has been ${asset.isFrozen ? 'unfrozen' : 'frozen'}.`,
+        });
+      }
     }
   };
 
   const handleSubmit = () => {
-    const { symbol, name, type, price, change, changePercent, marketCap, volume, logoUrl, description, sector, industry, isFrozen } = formValues;
+    const { symbol, name, type, logoUrl, logo, availableStock, isFrozen } = formValues;
 
-    if (!symbol || !name || !type || !price || !change || !changePercent || !marketCap || !volume) {
+    if (!symbol || !name || !type) {
       toast({
         title: 'Error',
         description: 'Please fill in all required fields.',
@@ -353,56 +190,91 @@ const StocksManagement = () => {
       return;
     }
 
-    const editedStock: StockData = {
-      id: selectedStock?.id || `stock-${Date.now()}`,
-      symbol,
-      name,
-      type,
-      price,
-      change,
-      changePercent,
-      marketCap,
-      volume,
-      logoUrl,
-      description,
-      sector,
-      industry,
-      isFrozen: isFrozen || false,
-      isPending: selectedStock?.isPending || false,
-    };
-
-    handleSaveStock(editedStock);
-    closeStockDialog();
+    try {
+      if (isEditMode && selectedAsset) {
+        // Update existing asset - only editable fields
+        const updated = updateAdminAsset(selectedAsset.id, {
+          symbol,
+          name,
+          type,
+          logoUrl: logoUrl || logo,
+          availableStock: availableStock || 100,
+          isFrozen: isFrozen || false
+        });
+        if (updated) {
+          setAssets(getAdminAssets());
+          toast({
+            title: 'Asset Updated',
+            description: `${name} has been updated successfully.`,
+          });
+        }
+      } else {
+        // Add new asset
+        const assetData = {
+          symbol,
+          name,
+          type: type as 'stock' | 'crypto',
+          price: 100, // Default values for non-editable fields
+          change: 0,
+          changePercent: 0,
+          marketCap: 1000000,
+          volume: 10000,
+          logoUrl: logoUrl || logo,
+          logo: logoUrl || logo,
+          availableStock: availableStock || 100,
+          isFrozen: isFrozen || false,
+        };
+        addAdminAsset(assetData);
+        setAssets(getAdminAssets());
+        toast({
+          title: 'Asset Created',
+          description: `${name} has been created successfully.`,
+        });
+      }
+      closeAssetDialog();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save asset.',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleDeleteStock = (stockId: string) => {
-    setStocks(prevStocks => prevStocks.filter(stock => stock.id !== stockId));
-    toast({
-      title: 'Stock Deleted',
-      description: 'Stock has been deleted successfully.',
-    });
+  const handleDeleteAsset = (assetId: string) => {
+    const asset = assets.find(a => a.id === assetId);
+    if (asset && deleteAdminAsset(assetId)) {
+      setAssets(getAdminAssets());
+      toast({
+        title: 'Asset Deleted',
+        description: `${asset.name} has been deleted successfully.`,
+      });
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete asset.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const exportToCsv = () => {
-    const headers = ['ID', 'Symbol', 'Name', 'Type', 'Price', 'Change', 'Change Percent', 'Market Cap', 'Volume', 'Logo URL', 'Description', 'Sector', 'Industry', 'Is Frozen', 'Is Pending'];
+    const headers = ['ID', 'Symbol', 'Name', 'Type', 'Price', 'Change', 'Change Percent', 'Market Cap', 'Volume', 'Logo URL', 'Available Stock', 'Is Frozen'];
     const csvRows = [
       headers.join(','),
-      ...filteredStocks.map(stock => [
-        stock.id,
-        stock.symbol,
-        stock.name,
-        stock.type,
-        stock.price,
-        stock.change,
-        stock.changePercent,
-        stock.marketCap,
-        stock.volume,
-        stock.logoUrl || '',
-        stock.description || '',
-        stock.sector || '',
-        stock.industry || '',
-        stock.isFrozen || false,
-        stock.isPending || false
+      ...filteredAssets.map(asset => [
+        asset.id,
+        asset.symbol,
+        asset.name,
+        asset.type,
+        asset.price,
+        asset.change,
+        asset.changePercent,
+        asset.marketCap,
+        asset.volume,
+        asset.logoUrl || asset.logo || '',
+        asset.availableStock || 0,
+        asset.isFrozen || false
       ].join(','))
     ];
 
@@ -411,7 +283,7 @@ const StocksManagement = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', 'stocks.csv');
+    link.setAttribute('download', 'assets.csv');
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -419,19 +291,19 @@ const StocksManagement = () => {
 
     toast({
       title: 'Export Successful',
-      description: `${filteredStocks.length} stocks exported to CSV.`,
+      description: `${filteredAssets.length} assets exported to CSV.`,
     });
   };
 
   return (
-    <AdminLayout title="Stocks" description="Manage and view all stocks">
+    <AdminLayout title="Assets Management" description="Manage and view all platform assets">
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
         <div className="flex flex-1 items-center gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder="Search stocks..."
+              placeholder="Search assets..."
               className="pl-10"
               value={searchQuery}
               onChange={handleSearchChange}
@@ -444,14 +316,14 @@ const StocksManagement = () => {
             <DownloadCloud className="h-4 w-4 mr-2" />
             Export
           </Button>
-          <Button onClick={openNewStockDialog}>
+          <Button onClick={openNewAssetDialog}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Stock
+            Add Asset
           </Button>
         </div>
       </div>
 
-      {/* Stocks table */}
+      {/* Assets table */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -463,8 +335,8 @@ const StocksManagement = () => {
               <TableHead className="text-right">Change</TableHead>
               <TableHead className="text-right">Market Cap</TableHead>
               <TableHead className="text-right">Volume</TableHead>
+              <TableHead className="text-right">Stock</TableHead>
               <TableHead className="text-center">Frozen</TableHead>
-              <TableHead className="text-center">Pending</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -478,44 +350,45 @@ const StocksManagement = () => {
                   </TableCell>
                 </TableRow>
               ))
-            ) : filteredStocks.length === 0 ? (
+            ) : filteredAssets.length === 0 ? (
               // No data state
               <TableRow>
                 <TableCell colSpan={10} className="h-24 text-center">
-                  No stocks found.
+                  No assets found.
                 </TableCell>
               </TableRow>
             ) : (
               // Data rows
-              filteredStocks.map((stock) => (
-                <TableRow key={stock.id}>
-                  <TableCell className="font-medium">{stock.symbol}</TableCell>
-                  <TableCell>{stock.name}</TableCell>
-                  <TableCell className="capitalize">{stock.type}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(stock.price)}</TableCell>
-                  <TableCell className="text-right">{stock.change}</TableCell>
-                  <TableCell className="text-right">{stock.marketCap}</TableCell>
-                  <TableCell className="text-right">{stock.volume}</TableCell>
-                  <TableCell className="text-center">
-                    <Switch
-                      checked={stock.isFrozen || false}
-                      onCheckedChange={() => handleToggleFreeze(stock.id)}
-                    />
+              filteredAssets.map((asset) => (
+                <TableRow key={asset.id}>
+                  <TableCell className="font-medium">{asset.symbol}</TableCell>
+                  <TableCell>{asset.name}</TableCell>
+                  <TableCell className="capitalize">{asset.type}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(asset.price)}</TableCell>
+                  <TableCell className="text-right">
+                    <span className={cn(
+                      asset.change >= 0 ? "text-green-600" : "text-red-600"
+                    )}>
+                      {asset.change >= 0 ? '+' : ''}{asset.change.toFixed(2)} ({asset.changePercent.toFixed(2)}%)
+                    </span>
                   </TableCell>
+                  <TableCell className="text-right">{asset.marketCap.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{asset.volume.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{asset.availableStock || 0}</TableCell>
                   <TableCell className="text-center">
                     <Switch
-                      checked={stock.isPending || false}
-                      onCheckedChange={() => handleTogglePending(stock.id)}
+                      checked={asset.isFrozen || false}
+                      onCheckedChange={() => handleToggleFreeze(asset.id)}
                     />
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => openEditStockDialog(stock)}>
-                        <Edit className="h-4 w-4 mr-2" />
+                      <Button variant="ghost" size="sm" onClick={() => openEditAssetDialog(asset)}>
+                        <Edit className="h-4 w-4 mr-1" />
                         Edit
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDeleteStock(stock.id)}>
-                        <Trash2 className="h-4 w-4 mr-2" />
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteAsset(asset.id)}>
+                        <Trash2 className="h-4 w-4 mr-1" />
                         Delete
                       </Button>
                     </div>
@@ -527,13 +400,13 @@ const StocksManagement = () => {
         </Table>
       </div>
 
-      {/* Stock details dialog */}
+      {/* Asset details dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[625px]">
           <DialogHeader>
-            <DialogTitle>{isEditMode ? 'Edit Stock' : 'Add New Stock'}</DialogTitle>
+            <DialogTitle>{isEditMode ? 'Edit Asset' : 'Add New Asset'}</DialogTitle>
             <DialogDescription>
-              {isEditMode ? 'Edit stock details.' : 'Create a new stock.'}
+              {isEditMode ? 'Edit asset details (only editable fields can be modified).' : 'Create a new asset.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -563,34 +436,10 @@ const StocksManagement = () => {
                 </SelectContent>
               </Select>
 
-              <Label htmlFor="price" className="text-right">
-                Price
+              <Label htmlFor="availableStock" className="text-right">
+                Available Stock
               </Label>
-              <Input id="price" name="price" type="number" value={formValues.price} onChange={handleInputChange} />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
-              <Label htmlFor="change" className="text-right">
-                Change
-              </Label>
-              <Input id="change" name="change" type="number" value={formValues.change} onChange={handleInputChange} />
-
-              <Label htmlFor="changePercent" className="text-right">
-                Change Percent
-              </Label>
-              <Input id="changePercent" name="changePercent" type="number" value={formValues.changePercent} onChange={handleInputChange} />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
-              <Label htmlFor="marketCap" className="text-right">
-                Market Cap
-              </Label>
-              <Input id="marketCap" name="marketCap" type="number" value={formValues.marketCap} onChange={handleInputChange} />
-
-              <Label htmlFor="volume" className="text-right">
-                Volume
-              </Label>
-              <Input id="volume" name="volume" type="number" value={formValues.volume} onChange={handleInputChange} />
+              <Input id="availableStock" name="availableStock" type="number" value={formValues.availableStock} onChange={handleInputChange} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
@@ -598,31 +447,14 @@ const StocksManagement = () => {
                 Logo URL
               </Label>
               <Input id="logoUrl" name="logoUrl" value={formValues.logoUrl || ''} onChange={handleInputChange} />
-
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Textarea id="description" name="description" value={formValues.description || ''} onChange={handleInputChange} />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 items-center gap-4">
-              <Label htmlFor="sector" className="text-right">
-                Sector
-              </Label>
-              <Input id="sector" name="sector" value={formValues.sector || ''} onChange={handleInputChange} />
-
-              <Label htmlFor="industry" className="text-right">
-                Industry
-              </Label>
-              <Input id="industry" name="industry" value={formValues.industry || ''} onChange={handleInputChange} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={closeStockDialog}>
+            <Button variant="outline" onClick={closeAssetDialog}>
               Cancel
             </Button>
             <Button onClick={handleSubmit}>
-              {isEditMode ? 'Update Stock' : 'Create Stock'}
+              {isEditMode ? 'Update Asset' : 'Create Asset'}
             </Button>
           </DialogFooter>
         </DialogContent>

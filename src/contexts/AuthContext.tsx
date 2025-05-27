@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Session, User } from '@supabase/supabase-js';
+import { useNavigate } from 'react-router-dom';
 
 // Types
 interface UserAddress {
@@ -15,6 +16,7 @@ interface UserProfile {
   id: string;
   name: string;
   email: string;
+  role: 'admin' | 'client'; // Added role field
   idNumber?: string;
   phone?: string;
   address?: UserAddress;
@@ -40,7 +42,9 @@ interface AuthContextType {
     address?: UserAddress
   ) => Promise<void>;
   logout: () => Promise<void>;
-  updateUserBalance: (amount: number) => void; // Added the missing method type
+  updateUserBalance: (amount: number) => void;
+  createAdmin: (adminData: { name: string; email: string; phone?: string }) => void; // Added admin creation
+  getAdmins: () => UserProfile[]; // Added admin retrieval
 }
 
 // Context
@@ -53,6 +57,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  
+  // Determine user role based on email or stored data
+  const determineUserRole = (email: string): 'admin' | 'client' => {
+    // Check if user is admin@gmail.com
+    if (email === 'admin@gmail.com') {
+      return 'admin';
+    }
+    
+    // Check if user is stored as admin in localStorage
+    const adminsKey = 'orangewave_admins';
+    const adminsJson = localStorage.getItem(adminsKey);
+    const admins = adminsJson ? JSON.parse(adminsJson) : [];
+    
+    const isStoredAdmin = admins.some((admin: UserProfile) => admin.email === email);
+    if (isStoredAdmin) return 'admin';
+    
+    // Check if email contains 'admin' for demo purposes
+    return email.includes('admin') ? 'admin' : 'client';
+  };
   
   // Fetch user profile from database
   const fetchUserProfile = async (userId: string) => {
@@ -77,11 +100,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const storedUserJson = localStorage.getItem('orangewave_user');
       const storedUser = storedUserJson ? JSON.parse(storedUserJson) : null;
       
+      // Determine user role
+      const userRole = determineUserRole(profileData.email || storedUser?.email || '');
+      
       // Create profile object with Supabase balance if it exists
       const userProfile: UserProfile = {
         id: userId,
         name: profileData.name || (storedUser?.name || ''),
         email: profileData.email || (storedUser?.email || ''),
+        role: userRole, // Set role based on determination
         phone: profileData.phone || (storedUser?.phone || ''),
         idNumber: storedUser?.idNumber || '',
         address: storedUser?.address || undefined,
@@ -154,7 +181,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
   
-  // Login function
+  // Login function with role-based redirection
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
@@ -210,11 +237,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // If we have a user ID, update the profile with additional data
       if (data?.user?.id) {
+        // Determine role for new user
+        const userRole = determineUserRole(email);
+        
         // Create backward compatibility data for localStorage
         const newUser: UserProfile = {
           id: data.user.id,
           name,
           email,
+          role: userRole, // Set role based on determination
           idNumber,
           phone,
           address,
@@ -301,6 +332,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
   
+  // Create admin function
+  const createAdmin = (adminData: { name: string; email: string; phone?: string }) => {
+    const adminsKey = 'orangewave_admins';
+    const adminsJson = localStorage.getItem(adminsKey);
+    const admins = adminsJson ? JSON.parse(adminsJson) : [];
+    
+    const newAdmin: UserProfile = {
+      id: `admin-${Date.now()}`,
+      name: adminData.name,
+      email: adminData.email,
+      role: 'admin',
+      phone: adminData.phone,
+      balance: {
+        wallet: 0,
+        investment: 0
+      }
+    };
+    
+    admins.push(newAdmin);
+    localStorage.setItem(adminsKey, JSON.stringify(admins));
+    
+    toast({
+      title: 'Admin created',
+      description: `Admin ${adminData.name} has been created successfully.`,
+    });
+  };
+  
+  // Get admins function
+  const getAdmins = (): UserProfile[] => {
+    const adminsKey = 'orangewave_admins';
+    const adminsJson = localStorage.getItem(adminsKey);
+    return adminsJson ? JSON.parse(adminsJson) : [];
+  };
+  
   return (
     <AuthContext.Provider
       value={{
@@ -312,7 +377,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         register,
         logout,
-        updateUserBalance // Add the function to the context value
+        updateUserBalance,
+        createAdmin,
+        getAdmins
       }}
     >
       {children}
