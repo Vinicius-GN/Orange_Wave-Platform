@@ -10,6 +10,7 @@ export interface EditableAssetFields {
   name: string;
   type: 'stock' | 'crypto';
   logoUrl?: string;
+  price?: number;
   availableStock?: number;
   isFrozen?: boolean;
 }
@@ -75,6 +76,7 @@ export const updateAdminAsset = (id: string, editableFields: Partial<EditableAss
     ...(editableFields.name && { name: editableFields.name }),
     ...(editableFields.type && { type: editableFields.type as 'stock' | 'crypto' }),
     ...(editableFields.logoUrl !== undefined && { logoUrl: editableFields.logoUrl }),
+    ...(editableFields.price !== undefined && { price: editableFields.price }),
     ...(editableFields.availableStock !== undefined && { availableStock: editableFields.availableStock }),
     ...(editableFields.isFrozen !== undefined && { isFrozen: editableFields.isFrozen })
   };

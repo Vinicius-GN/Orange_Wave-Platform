@@ -20,9 +20,14 @@ const isAdmin = (user: any) => {
 };
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, description }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   // Redirect to login if not authenticated, or to home if not an admin
   useEffect(() => {
     if (!isAuthenticated) {
@@ -52,7 +57,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, description 
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-              <ScrollArea className="h-[calc(50vh-300px)]">
+              <ScrollArea className="h-[calc(100vh-300px)]">
                 <div className="p-4 space-y-1">
                   <Button 
                     variant="ghost" 
@@ -93,7 +98,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, description 
                   <Button 
                     variant="ghost" 
                     className="w-full justify-start" 
-                    onClick={() => navigate('/')}
+                    onClick={handleLogout}
                   >
                     <Users className="h-4 w-4 mr-2" />
                     Logout

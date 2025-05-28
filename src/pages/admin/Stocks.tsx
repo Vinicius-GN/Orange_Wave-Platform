@@ -43,6 +43,7 @@ interface StockFormValues {
   type: 'stock' | 'crypto';
   logoUrl?: string;
   logo?: string;
+  price?: number;
   availableStock?: number;
   isFrozen?: boolean;
 }
@@ -138,6 +139,7 @@ const StocksManagement = () => {
       type: asset.type,
       logoUrl: asset.logoUrl,
       logo: asset.logo,
+      price: asset.price,
       availableStock: asset.availableStock,
       isFrozen: asset.isFrozen,
     });
@@ -179,7 +181,7 @@ const StocksManagement = () => {
   };
 
   const handleSubmit = () => {
-    const { symbol, name, type, logoUrl, logo, availableStock, isFrozen } = formValues;
+    const { symbol, name, type, logoUrl, price, logo, availableStock, isFrozen } = formValues;
 
     if (!symbol || !name || !type) {
       toast({
@@ -197,6 +199,7 @@ const StocksManagement = () => {
           symbol,
           name,
           type,
+          price: price || selectedAsset.price, // Keep existing price if not provided
           logoUrl: logoUrl || logo,
           availableStock: availableStock || 100,
           isFrozen: isFrozen || false
@@ -214,7 +217,7 @@ const StocksManagement = () => {
           symbol,
           name,
           type: type as 'stock' | 'crypto',
-          price: 100, // Default values for non-editable fields
+          price,
           change: 0,
           changePercent: 0,
           marketCap: 1000000,
@@ -435,6 +438,11 @@ const StocksManagement = () => {
                   <SelectItem value="crypto">Crypto</SelectItem>
                 </SelectContent>
               </Select>
+
+              <Label htmlFor="price" className="text-right">
+                Price
+              </Label>
+              <Input id="price" name="price" type="number" value={formValues.price} onChange={handleInputChange} />
 
               <Label htmlFor="availableStock" className="text-right">
                 Available Stock
