@@ -322,14 +322,22 @@ A aplicação foi construída com foco em modularidade e reutilização de compo
 
 ### Armazenamento dos Dados:
 
-Optamos por **não utilizar o `localStorage`** para persistência de dados e sim utilizar **variáveis locais de estado gerenciadas por Context API**. Esta decisão foi tomada por alguns motivos específicos:
+Neste estágio do desenvolvimento, priorizamos a implementação e validação das **funcionalidades centrais da aplicação** em detrimento da persistência entre sessões. Por isso, optamos por **não utilizar o `localStorage`** e sim manter os dados em **variáveis locais de estado gerenciadas por Context API**, com simulações adequadas à proposta do projeto.
 
-- O enunciado da atividade sugere simular funcionalidades de servidor **sem necessidade real de backend**, permitindo uso de mocks. A persistência longa de dados (como via `localStorage`) não era requisito.
-- O uso de **variáveis em contexto** foi suficiente para garantir a persistência de dados dentro de uma sessão e permitiu maior controle dos fluxos de teste (simulando banco de dados em memória).
-- Dados sensíveis ou críticos (como autenticação) foram mantidos em um BaaS (Backend As a Service) com o Supabase, de forma que não exigem armazenamento local, permitindo a melhor persistência do login do usuário e diferenciação entre usuários clientes e usuários admnistradores já no momento do login.
-- O foco foi em garantir o **comportamento funcional esperado**, não a durabilidade entre sessões, uma vez que os testes visam validar a lógica de operações e não o armazenamento perene.
+Essa decisão foi baseada nos seguintes pontos:
 
-Se necessário, seria trivial adaptar o código para salvar em `localStorage`, mas isso não agregaria tanto valor ao projeto quanto todas as funcionalidades extras desenvolvidas (venda de ativos, saldo simulado na plataforma, feed de notícias, simulaçao de trading e exportação de dados em CSV) ou aos testes solicitados na entrega da Milestone 2.
+- O enunciado da atividade propõe a simulação de funcionalidades de backend utilizando **mocks client-side**, sem necessidade de um servidor real ou persistência de longo prazo.
+- A abordagem com **Context API** nos permitiu controlar melhor os estados da aplicação durante a sessão, facilitando os testes e o desenvolvimento incremental das funcionalidades.
+- **Autenticação e dados sensíveis foram tratados via Supabase (BaaS)**, o que possibilitou diferenciação real entre clientes e administradores e login persistente, enquanto demais informações — como carteira, portfólio e ordens — foram simuladas com dados locais em memória.
+- Nosso foco nesta etapa foi **validar a lógica de operação da corretora simulada**, assegurando que funcionalidades como **compra e venda de ativos, atualização de saldo, controle de estoque e geração de históricos** estivessem operando corretamente.
+- A adição de suporte a `localStorage` ou `sessionStorage` seria simples, mas não agregaria tanto valor ao propósito desta entrega quanto as funcionalidades avançadas que desenvolvemos, como:
+  - Simulação completa de ordens com validação de estoque.
+  - Venda de ativos e atualização da carteira.
+  - Feed de notícias integradas.
+  - Simulador de estratégias de trading.
+  - Exportação de dados em CSV pelo administrador.
+
+Concluímos, assim, que manter os dados localmente foi suficiente e eficiente para cumprir os objetivos desta milestone, especialmente em um contexto de simulação com foco funcional.
 
 ### Considerações Técnicas
 
@@ -349,21 +357,23 @@ Abaixo estão listadas as principais funcionalidades testadas, com foco tanto na
 - **Ajuste de quantidade no carrinho (aumento, diminuição, exclusão)**  
   - Esperado: atualização automática do valor total e quantidade selecionada.
 - **Compra com saldo da carteira**  
-  - Esperado: falha caso o valor total ultrapasse o saldo ou o estoque; sucesso se dentro dos limites. Estoque e histórico são atualizados.
+  - Esperado: falha caso o valor total ultrapasse o saldo ou o estoque; sucesso se dentro dos limites. Estoque, histórico, saldo da conta e posição são atualizados.
 - **Compra com cartão de crédito (sem limite de saldo)**  
-  - Esperado: transação permitida se houver estoque; atualiza histórico e estoque.
+  - Esperado: transação permitida se houver estoque; atualiza histórico, estoque, saldo da conta e posição.
 - **Venda de ativos adquiridos**  
   - Esperado: acréscimo ao saldo virtual, redução proporcional no portfólio, atualização do histórico e aumento do estoque.
 - **Inserção e remoção de valores na carteira**  
   - Esperado: saldo atualizado em tempo real; impedir retirada acima do saldo.
 - **Exibição de notícias do mercado**  
-  - Esperado: carregar feed com títulos e links integrados à API.
+  - Esperado: carregar feed com títulos e notícias.
+- **Teste de simulação de trading**
+  - Esperado: Permitir compras, vendas, configuração de saldo inicial, visualização da posição atual e variação do valor ao longo da simulação.
 
 ### Funcionalidades a serem testadas (Administrador):
 - **CRUD de Ativos (ações e criptomoedas)**  
-  - Esperado: inclusão, edição e exclusão corretas; refletidas imediatamente nas telas de mercado e estoque.
+  - Esperado: inclusão, edição e exclusão corretas; refletidas imediatamente nas telas do administrador
 - **CRUD de Usuários e Administradores**  
-  - Esperado: visualizar usuários, editar status, cadastrar e excluir contas com efeito imediato nos dados simulados.
+  - Esperado: visualizar usuários, cadastrar e excluir contas com efeito imediato nos dados simulados.
 - **Visualização de movimentações e exportações**  
   - Esperado: painel de transações, filtro por tipo e exportação em formato CSV funcionando corretamente.
 - **Validação de acesso restrito a administradores**  
@@ -385,9 +395,8 @@ Abaixo estão listadas as principais funcionalidades testadas, com foco tanto na
 | Venda de ativos | Carteira atualizada, ativo removido do portfólio | Venda de 2 ações → +R$828, -2 ativos |
 | Inserção de saldo | Saldo incrementado instantaneamente | +R$500 → saldo atualizado |
 | Remoção de saldo | Redução até limite zero permitida | -R$200 → saldo atualizado |
-| Criação de novo ativo (admin) | Ativo visível imediatamente no mercado | Novo ativo: "Tesla" → exibido em `Market.tsx` |
-| Edição de ativo existente (admin) | Mudanças refletidas em tempo real | Alterar preço de "Apple" → atualizado |
-| Exclusão de ativo (admin) | Remoção imediata da listagem | "Bitcoin" excluído → removido do painel |
+| Edição de ativo existente (admin) | Mudanças refletidas em tempo real | Alterar preço de "Apple" → atualizado na aba do admin|
+| Exclusão de ativo (admin) | Remoção imediata da listagem | "Bitcoin" excluído → removido do painel do admin|
 | Registro de novo administrador | Login e acesso restrito funcionando | admin2@gmail.com → redirecionado para `Dashboard` |
 | Exportação de transações | CSV gerado corretamente | 10 transações → CSV baixado com colunas válidas |
 
@@ -469,7 +478,11 @@ npm install
 # Etapa 4: Inicie o servidor de desenvolvimento com recarregamento automático e visualização instantânea.
 npm run dev
 ```
-- Faça login na plataforma com o usuário "grupo@gmail.com" e "senha123" para acessar as funcionalidades de usuário
+- Faça login na plataforma com o usuário "grupo@gmail.com" e "senha123" para acessar as funcionalidades de cliente
 - Faça login na plataforma com o usuário "admin@gmail.com" e "senha123" para acessar as funcionalidades de administrador
 
+## Problemas Encontrados:
+Sem problemas encontradoos
 
+## Comentários Adicionais
+Sem comentarios adicionais
