@@ -397,7 +397,6 @@ Abaixo estão listadas as principais funcionalidades testadas, com foco tanto na
 | Remoção de saldo | Redução até limite zero permitida | -R$200 → saldo atualizado |
 | Edição de ativo existente (admin) | Mudanças refletidas em tempo real | Alterar preço de "Apple" → atualizado na aba do admin|
 | Exclusão de ativo (admin) | Remoção imediata da listagem | "Bitcoin" excluído → removido do painel do admin|
-| Registro de novo administrador | Login e acesso restrito funcionando | admin2@gmail.com → redirecionado para `Dashboard` |
 | Exportação de transações | CSV gerado corretamente | 10 transações → CSV baixado com colunas válidas |
 
 ---
