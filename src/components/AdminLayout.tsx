@@ -42,10 +42,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, description 
   
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
+      <div className="mx-auto py-8 px-4 mr-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Sidebar */}
-          <Card className="md:col-span-3">
+          <Card className="md:col-span-3 w-fit md:w-auto md:max-w-[300px]">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Shield className="h-5 w-5 mr-2 flex-shrink-0" />
