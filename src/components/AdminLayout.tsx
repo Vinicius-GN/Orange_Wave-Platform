@@ -1,4 +1,3 @@
-
 import React, { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Users, BarChart3, Package, ReceiptText } from 'lucide-react';
@@ -43,13 +42,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, description 
   
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
+      <div className="mx-auto py-8 px-4 lg:mr-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Sidebar */}
-          <Card className="md:col-span-3">
+          <Card className="md:col-span-3 w-fit md:w-auto md:max-w-[300px]">
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Shield className="h-5 w-5 mr-2" />
+                <Shield className="h-5 w-5 mr-2 flex-shrink-0" />
                 Admin Dashboard
               </CardTitle>
               <CardDescription>
@@ -57,14 +56,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, description 
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-              <ScrollArea className="h-[calc(100vh-300px)]">
+              <ScrollArea className="h-fit md:h-[calc(100vh-300px)]">
                 <div className="p-4 space-y-1">
                   <Button 
                     variant="ghost" 
                     className="w-full justify-start" 
                     onClick={() => navigate('/admin')}
                   >
-                    <BarChart3 className="h-4 w-4 mr-2" />
+                    <BarChart3 className="h-4 w-4 mr-2 flex-shrink-0" />
                     Overview
                   </Button>
                   
@@ -73,7 +72,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, description 
                     className="w-full justify-start" 
                     onClick={() => navigate('/admin/stocks')}
                   >
-                    <Package className="h-4 w-4 mr-2" />
+                    <Package className="h-4 w-4 mr-2 flex-shrink-0" />
                     Manage Assets
                   </Button>
                   
@@ -82,7 +81,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, description 
                     className="w-full justify-start" 
                     onClick={() => navigate('/admin/users')}
                   >
-                    <Users className="h-4 w-4 mr-2" />
+                    <Users className="h-4 w-4 mr-2 flex-shrink-0" />
                     Manage Users
                   </Button>
                   
@@ -91,7 +90,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, description 
                     className="w-full justify-start" 
                     onClick={() => navigate('/admin/transactions')}
                   >
-                    <ReceiptText className="h-4 w-4 mr-2" />
+                    <ReceiptText className="h-4 w-4 mr-2 flex-shrink-0" />
                     Transactions
                   </Button>
 
@@ -100,7 +99,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, description 
                     className="w-full justify-start" 
                     onClick={handleLogout}
                   >
-                    <Users className="h-4 w-4 mr-2" />
+                    <Users className="h-4 w-4 mr-2 flex-shrink-0" />
                     Logout
                   </Button>
 

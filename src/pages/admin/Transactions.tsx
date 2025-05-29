@@ -645,43 +645,43 @@ const TransactionsManagement = () => {
           {selectedTransaction ? (
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="id" className="text-right">
+                <Label htmlFor="id" className="text-left">
                   Transaction ID
                 </Label>
                 <Input id="id" value={selectedTransaction.id} className="col-span-3" readOnly />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="userId" className="text-right">
+                <Label htmlFor="userId" className="text-left">
                   User ID
                 </Label>
                 <Input id="userId" value={selectedTransaction.userId} className="col-span-3" readOnly />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="type" className="text-right">
+                <Label htmlFor="type" className="text-left">
                   Type
                 </Label>
                 <Input id="type" value={selectedTransaction.type} className="col-span-3" readOnly />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="amount" className="text-right">
+                <Label htmlFor="amount" className="text-left">
                   Amount
                 </Label>
-                <Input id="amount" value={formatCurrency(selectedTransaction.amount)} className="col-span-3 text-right" readOnly />
+                <Input id="amount" value={formatCurrency(selectedTransaction.amount)} className="col-span-3" readOnly />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="date" className="text-right">
+                <Label htmlFor="date" className="text-left">
                   Date
                 </Label>
                 <Input id="date" value={format(new Date(selectedTransaction.date), 'MMM dd, yyyy')} className="col-span-3" readOnly />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="status" className="text-right">
+                <Label htmlFor="status" className="text-left">
                   Status
                 </Label>
                 <Input id="status" value={selectedTransaction.status} className="col-span-3" readOnly />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="paymentMethod" className="text-right">
+                <Label htmlFor="paymentMethod" className="text-left">
                   Payment Method
                 </Label>
                 <Input id="paymentMethod" value={selectedTransaction.paymentMethod || 'N/A'} className="col-span-3" readOnly />
